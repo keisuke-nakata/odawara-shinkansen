@@ -1,0 +1,7 @@
+.cache/
+node_modules/
+site/
+# 職場のメールアドレスを書くので公開しない（config.example.json を参照）
+config.json
+# 以前のバージョンが書き出していたページ（もう使わない）
+out/

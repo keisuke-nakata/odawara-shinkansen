@@ -1,0 +1,60 @@
+# 毎日、今日から31日先までの時刻表ページを作り直して GitHub Pages に公開する
+name: 時刻表ページの更新
+
+on:
+  schedule:
+    - cron: '17 19 * * *' # 毎日 4:17（日本時間）
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      # 到着時刻のキャッシュを前回の実行から引き継ぐ（なくなっても、取り直すので数分長くかかるだけ）
+      - uses: actions/cache@v6
+        with:
+          path: .cache
+          key: arrivals-${{ github.run_id }}
+          restore-keys: arrivals-
+      - run: npm test
+      - run: node scripts/build-site.js
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
+
+  # 公開リポジトリの定期実行は、60日間リポジトリに動きがないと GitHub に止められる。
+  # ワークフローを有効にし直して、止められないようにする
+  keepalive:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/pages.yml/enable"
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -1,0 +1,10 @@
+{
+  "name": "odawara-shinkansen",
+  "private": true,
+  "description": "小田原⇔東京の新幹線（小田原停車列車）の時刻を JR東海公式サイトから取得する",
+  "scripts": {
+    "start": "node cli.js",
+    "test": "node --test",
+    "build:site": "node scripts/build-site.js"
+  }
+}
