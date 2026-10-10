@@ -66,3 +66,37 @@ test('isOurServer: このツールのサーバーかどうか', async (t) => {
   assert.equal(await isOurServer(origin), true);
   assert.equal(await isOurServer('http://127.0.0.1:1'), false);
 });
+
+// fetch では Host ヘッダーを変えられないので http.request を使う
+function getWithHost(origin, pathname, host) {
+  const http = require('node:http');
+  return new Promise((resolve, reject) => {
+    const req = http.request(`${origin}${pathname}`, { headers: { Host: host } }, (res) => {
+      res.resume();
+      res.on('end', () => resolve(res.statusCode));
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+test('server: 127.0.0.1 / localhost 以外の Host 宛てのリクエストは断る（DNS リバインディング対策）', async (t) => {
+  const { server, origin } = await start(async () => assert.fail('呼ばれないはず'));
+  t.after(() => server.close());
+  const { port } = server.address();
+
+  assert.equal(await getWithHost(origin, '/2026-10-07', 'evil.example'), 403);
+  assert.equal(await getWithHost(origin, '/__health', `evil.example:${port}`), 403);
+  assert.equal(await getWithHost(origin, '/__health', `localhost:${port}`), 200);
+});
+
+test('server: 今日から31日先より外の日付は、公式サイトに問い合わせずに断る', async (t) => {
+  const { server, origin } = await start(async () => assert.fail('呼ばれないはず'));
+  t.after(() => server.close());
+
+  for (const date of ['2026-10-03', '2026-11-05', '2099-01-01']) {
+    const res = await fetch(`${origin}/${date}`);
+    assert.equal(res.status, 404);
+    assert.match(await res.text(), /表示できるのは今日から31日先までです/);
+  }
+});

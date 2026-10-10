@@ -3,7 +3,7 @@
  */
 const http = require('node:http');
 const { renderPage, renderErrorPage } = require('./page');
-const { isValidDate, nowInTokyo } = require('./dates');
+const { RANGE_DAYS, isValidDate, isWithinRange, nowInTokyo } = require('./dates');
 
 // すでに起動しているサーバーがこのツールのものか確かめるための URL と応答
 const HEALTH_PATH = '/__health';
@@ -30,6 +30,12 @@ function createServer({ loadDay, today, account, log = () => {} }) {
       res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', ...headers });
       res.end(body);
     };
+    // DNS リバインディング対策: 自分の PC 宛て（127.0.0.1 / localhost）のリクエストだけを受け付ける
+    const port = req.socket.localPort;
+    if (![`127.0.0.1:${port}`, `localhost:${port}`].includes(req.headers.host)) {
+      return send(403, 'Forbidden', { 'Content-Type': 'text/plain' });
+    }
+
     const { pathname } = new URL(req.url, 'http://localhost');
     if (pathname === HEALTH_PATH) return send(200, HEALTH_BODY, { 'Content-Type': 'text/plain' });
 
@@ -38,6 +44,10 @@ function createServer({ loadDay, today, account, log = () => {} }) {
 
     const date = pathname.slice(1);
     if (!isValidDate(date)) return send(404, 'Not Found', { 'Content-Type': 'text/plain' });
+    // 外部のページからたくさんの日付を開かせて、公式サイトへの問い合わせを増やされないよう、範囲を絞る
+    if (!isWithinRange(date, todayDate)) {
+      return send(404, renderErrorPage(date, `表示できるのは今日から${RANGE_DAYS}日先までです。`, { today: todayDate }));
+    }
 
     const started = Date.now();
     try {

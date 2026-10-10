@@ -1,4 +1,6 @@
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
+// 表示する範囲は今日から31日先まで（公式サイトの画面で選べる範囲に合わせる）
+const RANGE_DAYS = 31;
 
 function todayInTokyo() {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
@@ -31,6 +33,10 @@ function addDays(date, days) {
   return d.toISOString().slice(0, 10);
 }
 
+function isWithinRange(date, today) {
+  return date >= today && date <= addDays(today, RANGE_DAYS);
+}
+
 /**
  * コマンドラインで指定された日付を YYYY-MM-DD にする。
  * - 2026-10-07
@@ -57,4 +63,6 @@ function resolveDate(input, today) {
   throw new Error(`日付は 2026-10-07、10/7、水 のどれかの形で指定してください: ${input}`);
 }
 
-module.exports = { todayInTokyo, nowInTokyo, isValidDate, weekdayOf, resolveDate, addDays };
+module.exports = {
+  RANGE_DAYS, todayInTokyo, nowInTokyo, isValidDate, isWithinRange, weekdayOf, resolveDate, addDays,
+};

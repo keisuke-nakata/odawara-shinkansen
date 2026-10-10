@@ -2,11 +2,9 @@
  * 往路・復路の列車一覧を、カレンダー登録リンクと日付移動つきの HTML ページにする。
  */
 const { calendarUrl } = require('./calendar');
-const { weekdayOf, addDays } = require('./dates');
+const { RANGE_DAYS, weekdayOf, addDays } = require('./dates');
 
 const SPECIAL_NOTE = '臨時列車、または運転日により行先・停車駅などが変わる列車';
-// 公式サイトの画面で選べる範囲（当日から約1ヶ月先）に合わせる
-const NAV_RANGE_DAYS = 31;
 // 日付ごとのページの URL。公開用の静的ページでは ./{date}.html になる
 const DEFAULT_LINK_TEMPLATE = '/{date}';
 // 公開用のページで、カレンダーの登録先アカウントをブラウザに覚えておくときのキー
@@ -35,7 +33,7 @@ function renderTrain(date, train, account) {
     : '<span class="unknown">到着時刻不明</span>';
   return `
       <li class="train">
-        <span class="time">${train.dep ?? '--:--'}<span class="arrow">→</span>${train.arr ?? '--:--'}</span>
+        <span class="time">${escapeHtml(train.dep ?? '--:--')}<span class="arrow">→</span>${escapeHtml(train.arr ?? '--:--')}</span>
         <span class="name ${type}">${special}${escapeHtml(train.name)}</span>
         ${action}
       </li>`;
@@ -45,12 +43,12 @@ function renderColumn(date, title, trains, account) {
   // 出発時刻の「時」ごとに区切ると、目で追いやすい
   const groups = new Map();
   for (const t of trains) {
-    const hour = t.dep.slice(0, 2);
+    const hour = Number(t.dep.slice(0, 2));
     if (!groups.has(hour)) groups.set(hour, []);
     groups.get(hour).push(t);
   }
   const body = [...groups].map(([hour, ts]) => `
-    <li class="hour"><span>${Number(hour)}時</span>
+    <li class="hour"><span>${hour}時</span>
       <ul>${ts.map((t) => renderTrain(date, t, account)).join('')}
       </ul>
     </li>`).join('');
@@ -63,7 +61,7 @@ function renderColumn(date, title, trains, account) {
 }
 
 function renderNav(date, today, linkTemplate) {
-  const max = addDays(today, NAV_RANGE_DAYS);
+  const max = addDays(today, RANGE_DAYS);
   const href = (d) => escapeHtml(linkTemplate.replace('{date}', d));
   const link = (id, target, text, enabled) => (enabled
     ? `<a class="btn" id="${id}" href="${href(target)}">${text}</a>`

@@ -125,3 +125,12 @@ test('renderPage: 検索エンジンに載らないようにする', () => {
   const html = renderPage(emptyDay('2026-10-07'), { generatedAt: '', today: '2026-10-04' });
   assert.match(html, /<meta name="robots" content="noindex, nofollow">/);
 });
+
+test('renderPage: 時刻も HTML としてエスケープする（キャッシュが壊れていても安全に）', () => {
+  const html = renderPage(
+    { date: '2026-10-07', warning: null, up: [{ ...up, arr: '<img src=x onerror=alert(1)>' }], down: [] },
+    { generatedAt: '', today: '2026-10-04' },
+  );
+  assert.ok(!html.includes('<img'));
+  assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/);
+});

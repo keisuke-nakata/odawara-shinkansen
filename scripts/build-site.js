@@ -17,10 +17,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { getDay } = require('../src/jrc');
 const { renderPage } = require('../src/page');
-const { todayInTokyo, nowInTokyo, addDays } = require('../src/dates');
+const { RANGE_DAYS, todayInTokyo, nowInTokyo, addDays } = require('../src/dates');
 
 const ROOT = path.join(__dirname, '..');
-const DAYS_AHEAD = 31;
 const LINK_TEMPLATE = './{date}.html';
 
 function indexPage(dates) {
@@ -52,7 +51,7 @@ function indexPage(dates) {
  * @param {(message: string) => void} [options.log]
  */
 async function buildSite({
-  outDir, deps, today = todayInTokyo(), daysAhead = DAYS_AHEAD, dayInterval = 1000, log = () => {},
+  outDir, deps, today = todayInTokyo(), daysAhead = RANGE_DAYS, dayInterval = 1000, log = () => {},
 }) {
   const generatedAt = nowInTokyo();
   const dates = Array.from({ length: daysAhead + 1 }, (_, i) => addDays(today, i));
