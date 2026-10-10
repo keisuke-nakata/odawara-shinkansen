@@ -6,7 +6,9 @@
  *
  * - site/YYYY-MM-DD.html … 今日から31日先までの日付ごとのページ（日付の移動つき）
  * - site/index.html … 開いた日の（日本時間の）今日のページへ移動する
- * - site/robots.txt … 検索エンジンに載らないようにする
+ *
+ * 検索エンジンには各ページの noindex で載らないようにする（GitHub Pages のプロジェクト ページでは、
+ * サブパスに置いた robots.txt は読まれないため）。
  *
  * カレンダーの登録先アカウントはページに書かない（見るブラウザで入力して覚えておく）。
  * 1日でも取得に失敗したら終了コード 1 で終わる（GitHub Actions では公開せず、前回のページが残る）。
@@ -71,7 +73,6 @@ async function buildSite({
   if (failures.length) throw new Error(`取得できなかった日があります:\n${failures.join('\n')}`);
 
   pages['index.html'] = indexPage(dates);
-  pages['robots.txt'] = 'User-agent: *\nDisallow: /\n';
   fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(outDir, { recursive: true });
   for (const [name, content] of Object.entries(pages)) fs.writeFileSync(path.join(outDir, name), content);

@@ -59,7 +59,7 @@ test('buildSite: 日付ごとのページと、今日へ移動する index を�
   });
   assert.deepEqual(dates, ['2026-10-07', '2026-10-08', '2026-10-09']);
   assert.deepEqual(fs.readdirSync(outDir).sort(),
-    ['2026-10-07.html', '2026-10-08.html', '2026-10-09.html', 'index.html', 'robots.txt']);
+    ['2026-10-07.html', '2026-10-08.html', '2026-10-09.html', 'index.html']);
 
   const page = fs.readFileSync(path.join(outDir, '2026-10-08.html'), 'utf8');
   assert.match(page, /10\/8\(木\) の新幹線/);
@@ -72,7 +72,7 @@ test('buildSite: 日付ごとのページと、今日へ移動する index を�
 
   const index = fs.readFileSync(path.join(outDir, 'index.html'), 'utf8');
   assert.match(index, /const dates = \["2026-10-07","2026-10-08","2026-10-09"\]/);
-  assert.equal(fs.readFileSync(path.join(outDir, 'robots.txt'), 'utf8'), 'User-agent: *\nDisallow: /\n');
+  assert.match(index, /<meta name="robots" content="noindex, nofollow">/);
 });
 
 test('buildSite: 1日でも取得に失敗したら、エラーにして前回のページを残す', async (t) => {
